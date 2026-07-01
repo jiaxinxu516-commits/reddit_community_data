@@ -1,6 +1,5 @@
-from collections import Counter
+import pandas as pd
 import re
-
 
 BUG_KEYWORDS = {
 
@@ -12,19 +11,20 @@ BUG_KEYWORDS = {
         "flicker"
     ],
 
+    "Connection": [
+        "connection",
+        "disconnect",
+        "bluetooth",
+        "wifi",
+        "hdmi",
+        "usb"
+    ],
+
     "Battery": [
         "battery",
         "charging",
         "charge",
         "power"
-    ],
-
-    "Connection": [
-        "bluetooth",
-        "wifi",
-        "disconnect",
-        "hdmi",
-        "usb"
     ],
 
     "Audio": [
@@ -52,14 +52,18 @@ BUG_KEYWORDS = {
 }
 
 
-def bug_analysis(data):
+def bug_analysis(df):
 
-    counter = Counter()
+    bug_counts = {}
 
-    for post in data:
+    for bug in BUG_KEYWORDS:
+        bug_counts[bug] = 0
+
+    for _, row in df.iterrows():
 
         text = (
-            post["title"] + " " + post["body"]
+            str(row["title"]) + " " +
+            str(row["body"])
         ).lower()
 
         for bug, keywords in BUG_KEYWORDS.items():
@@ -67,10 +71,18 @@ def bug_analysis(data):
             for keyword in keywords:
 
                 if re.search(
-                        rf"\b{re.escape(keyword)}\b",
-                        text):
-
-                    counter[bug] += 1
+                    rf"\b{re.escape(keyword)}\b",
+                    text
+                ):
+                    bug_counts[bug] += 1
                     break
 
-    return counter
+    bug_df = (
+        pd.DataFrame({
+            "Bug": bug_counts.keys(),
+            "Count": bug_counts.values()
+        })
+        .sort_values("Count", ascending=False)
+    )
+
+    return bug_df

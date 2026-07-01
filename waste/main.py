@@ -4,7 +4,7 @@ from utils.activity_analysis import activity_analysis
 from utils.feature_analysis import feature_analysis
 from utils.bug_analysis import bug_analysis
 
-from dashboard import create_dashboard
+from waste.dashboard import create_dashboard
 
 
 def main():

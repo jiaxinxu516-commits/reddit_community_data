@@ -6,18 +6,42 @@ import plotly.express as px
 
 from utils.feature_analysis import feature_analysis
 
+from utils.bug_analysis import bug_analysis
+
+from utils.sentiment_analysis import sentiment_analysis
+
+from utils.summary import generate_summary
+
 
 st.set_page_config(
     page_title="Reddit Community Dashboard",
     layout="wide"
 )
 
+
+#build dashboard
 st.title("📊 Reddit Community Intelligence Dashboard")
+color_discrete_sequence=[
+    "#00B5FF"
+]
+
+left, right = st.columns(2)
+
 
 df = load_data("data/reddit_rokid_glasses_data.json")
 activity = activity_analysis(df)
 feature_df = feature_analysis(df)
+bug_df = bug_analysis(df)
+sentiment_df, sentiment_summary = sentiment_analysis(df)
+summary = generate_summary(
+    activity,
+    feature_df,
+    bug_df,
+    sentiment_summary
+)
 
+
+#community overtime
 st.subheader("📈 Community Overview")
 
 c1, c2, c3, c4 = st.columns(4)
@@ -46,8 +70,9 @@ with c4:
         activity["avg_comments"]
     )
 
-st.divider()
 
+#posts over time
+st.divider()
 st.subheader("📈 Posts Over Time")
 
 fig = px.bar(
@@ -81,8 +106,9 @@ st.plotly_chart(
     use_container_width=True
 )
 
-st.divider()
 
+#top feature requests
+st.divider()
 st.subheader("📦 Top Feature Requests")
 
 fig_feature = px.bar(
@@ -110,3 +136,109 @@ st.plotly_chart(
     fig_feature,
     use_container_width=True
 )
+
+
+#Bug analysis
+st.divider()
+st.subheader("🐞 Bug Analysis")
+
+fig_bug = px.bar(
+
+    bug_df,
+
+    x="Count",
+
+    y="Bug",
+
+    orientation="h",
+
+    template="plotly_dark",
+
+    text="Count",
+
+    title="Most Reported Bugs"
+
+)
+
+fig_bug.update_layout(
+
+    yaxis=dict(
+        categoryorder="total ascending"
+    ),
+
+    xaxis_title="Mentions",
+
+    yaxis_title=""
+
+)
+
+st.plotly_chart(
+    fig_bug,
+    use_container_width=True
+)
+
+#PNN
+st.divider()
+st.subheader("🧠 Community Sentiment")
+
+fig_sentiment = px.pie(
+
+    sentiment_summary,
+
+    names="Sentiment",
+
+    values="Count",
+
+    template="plotly_dark",
+
+    title="Sentiment Distribution"
+
+)
+
+st.plotly_chart(
+    fig_sentiment,
+    use_container_width=True
+)
+
+c1, c2, c3 = st.columns(3)
+
+positive = sentiment_summary.loc[
+    sentiment_summary["Sentiment"]=="positive",
+    "Count"
+].sum()
+
+neutral = sentiment_summary.loc[
+    sentiment_summary["Sentiment"]=="neutral",
+    "Count"
+].sum()
+
+negative = sentiment_summary.loc[
+    sentiment_summary["Sentiment"]=="negative",
+    "Count"
+].sum()
+
+c1.metric("😊 Positive", positive)
+
+c2.metric("😐 Neutral", neutral)
+
+c3.metric("😞 Negative", negative)
+
+color_map = {
+    "positive": "#00cc96",
+    "neutral": "#636efa",
+    "negative": "#ff4b4b"
+}
+
+fig_sentiment = px.pie(
+    sentiment_summary,
+    names="Sentiment",
+    values="Count",
+    color="Sentiment",
+    color_discrete_map=color_map,
+    template="plotly_dark",
+    title="Sentiment Distribution"
+)
+
+st.divider()
+st.subheader("📋 AI Community Summary")
+st.markdown(summary)

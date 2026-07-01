@@ -1,4 +1,4 @@
-from data_loader import load_data
+from utils.data_loader import load_data
 import json
 
 data = load_data("data/reddit_rokid_glasses_data.json")

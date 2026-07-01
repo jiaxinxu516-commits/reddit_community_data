@@ -1,8 +1,8 @@
-from data_loader import load_data
+from utils.data_loader import load_data
 
-from activity_analysis import activity_analysis
-from feature_analysis import feature_analysis
-from bug_analysis import bug_analysis
+from utils.activity_analysis import activity_analysis
+from utils.feature_analysis import feature_analysis
+from utils.bug_analysis import bug_analysis
 
 from dashboard import create_dashboard
 

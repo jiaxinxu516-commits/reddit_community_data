@@ -1,14 +1,13 @@
-from collections import Counter
+import pandas as pd
 import re
 
-
 FEATURE_KEYWORDS = {
-
     "AI": [
         "ai",
-        "gemini",
         "assistant",
-        "chatgpt"
+        "chatgpt",
+        "gemini",
+        "llm"
     ],
 
     "Translation": [
@@ -31,8 +30,8 @@ FEATURE_KEYWORDS = {
     ],
 
     "Navigation": [
-        "maps",
         "navigation",
+        "maps",
         "gps"
     ],
 
@@ -44,14 +43,19 @@ FEATURE_KEYWORDS = {
 }
 
 
-def feature_analysis(data):
+def feature_analysis(df):
 
-    counter = Counter()
+    feature_counts = {}
 
-    for post in data:
+    for feature in FEATURE_KEYWORDS:
+
+        feature_counts[feature] = 0
+
+    for _, row in df.iterrows():
 
         text = (
-            post["title"] + " " + post["body"]
+            str(row["title"]) + " " +
+            str(row["body"])
         ).lower()
 
         for feature, keywords in FEATURE_KEYWORDS.items():
@@ -59,10 +63,18 @@ def feature_analysis(data):
             for keyword in keywords:
 
                 if re.search(
-                        rf"\b{re.escape(keyword)}\b",
-                        text):
-
-                    counter[feature] += 1
+                    rf"\b{re.escape(keyword)}\b",
+                    text
+                ):
+                    feature_counts[feature] += 1
                     break
 
-    return counter
+    feature_df = (
+        pd.DataFrame({
+            "Feature": feature_counts.keys(),
+            "Count": feature_counts.values()
+        })
+        .sort_values("Count", ascending=False)
+    )
+
+    return feature_df

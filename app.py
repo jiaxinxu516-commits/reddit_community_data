@@ -12,6 +12,10 @@ from utils.sentiment_analysis import sentiment_analysis
 
 from utils.summary import generate_summary
 
+from utils.topic_analysis import topic_analysis
+
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
 
 st.set_page_config(
     page_title="Reddit Community Dashboard",
@@ -32,12 +36,22 @@ df = load_data("data/reddit_rokid_glasses_data.json")
 activity = activity_analysis(df)
 feature_df = feature_analysis(df)
 bug_df = bug_analysis(df)
-sentiment_df, sentiment_summary = sentiment_analysis(df)
+
+sentiment = sentiment_analysis(df)
+sentiment_df = sentiment["df"]
+sentiment_summary = sentiment["summary"]
+sentiment_timeline = sentiment["timeline"]
+negative_posts = sentiment["negative_posts"]
+
+
+topic_df = topic_analysis(df)
+
 summary = generate_summary(
     activity,
     feature_df,
     bug_df,
-    sentiment_summary
+    topic_df,
+    sentiment
 )
 
 
@@ -177,6 +191,52 @@ st.plotly_chart(
     use_container_width=True
 )
 
+#Hot topics
+st.divider()
+st.subheader("🔥 Hot Topics")
+
+fig_topic = px.bar(
+
+    topic_df,
+
+    x="Score",
+
+    y="Topic",
+
+    orientation="h",
+
+    template="plotly_dark",
+
+    text_auto=".2f",
+
+    title="Top Discussion Topics"
+)
+
+
+fig_topic.update_layout(
+
+    yaxis=dict(
+        categoryorder="total ascending"
+    ),
+
+    xaxis_title="TF-IDF Score",
+
+    yaxis_title=""
+
+)
+
+fig_topic.update_yaxes(
+    categoryorder="total ascending",
+    tickmode="linear",
+    automargin=True
+)
+
+st.plotly_chart(
+    fig_topic,
+    use_container_width=True
+)
+
+
 #PNN
 st.divider()
 st.subheader("🧠 Community Sentiment")
@@ -238,6 +298,8 @@ fig_sentiment = px.pie(
     template="plotly_dark",
     title="Sentiment Distribution"
 )
+
+
 
 st.divider()
 st.subheader("📋 AI Community Summary")

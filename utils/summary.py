@@ -1,46 +1,87 @@
-def generate_summary(activity, feature_df, bug_df, sentiment_summary):
+def generate_summary(activity, features, bugs, topics, sentiment):
 
-    # 最热门功能
-    top_feature = feature_df.iloc[0]["Feature"]
-    top_feature_count = feature_df.iloc[0]["Count"]
+    # Top Feature
+    top_feature = (
+        features.iloc[0]["Feature"]
+        if len(features) > 0
+        else "N/A"
+    )
 
-    # 最常见 Bug
-    top_bug = bug_df.iloc[0]["Bug"]
-    top_bug_count = bug_df.iloc[0]["Count"]
+    # Top Bug
+    top_bug = (
+        bugs.iloc[0]["Bug"]
+        if len(bugs) > 0
+        else "N/A"
+    )
 
-    # 情绪统计
-    positive = sentiment_summary.loc[
-        sentiment_summary["Sentiment"] == "positive",
+    # Top Topic
+    top_topic = (
+        topics.iloc[0]["Topic"]
+        if len(topics) > 0
+        else "N/A"
+    )
+
+    # Sentiment
+    summary_df = sentiment["summary"]
+
+    positive = summary_df.loc[
+        summary_df["Sentiment"] == "positive",
         "Count"
     ].sum()
 
-    neutral = sentiment_summary.loc[
-        sentiment_summary["Sentiment"] == "neutral",
+    neutral = summary_df.loc[
+        summary_df["Sentiment"] == "neutral",
         "Count"
     ].sum()
 
-    negative = sentiment_summary.loc[
-        sentiment_summary["Sentiment"] == "negative",
+    negative = summary_df.loc[
+        summary_df["Sentiment"] == "negative",
         "Count"
     ].sum()
 
-    summary = f"""
-## 📋 Community Daily Summary
+    report = f"""
+### 📌 Community Daily Summary
 
-- Total Posts: {activity['posts']}
-- Total Comments: {activity['comments']}
-- Active Users: {activity['users']}
+Today the Reddit community remained active.
 
-### 🔥 Top Feature Request
-**{top_feature}** ({top_feature_count} mentions)
+• 📄 **Posts:** {activity["posts"]}
 
-### 🐞 Most Reported Bug
-**{top_bug}** ({top_bug_count} mentions)
+• 💬 **Comments:** {activity["comments"]}
+
+• 👥 **Active Users:** {activity["users"]}
+
+---
+
+### 🔥 Key Insights
+
+• Most requested feature: **{top_feature}**
+
+• Most discussed topic: **{top_topic}**
+
+• Most reported bug: **{top_bug}**
+
+---
 
 ### 😊 Community Sentiment
+
 Positive: {positive}
+
 Neutral: {neutral}
+
 Negative: {negative}
+
+---
+
+### 🎯 Recommendation
+
+Product Team:
+Focus on **{top_feature}** related feature requests.
+
+QA Team:
+Investigate **{top_bug}** related issues.
+
+Community Team:
+Monitor discussions around **{top_topic}**.
 """
 
-    return summary
+    return report

@@ -16,6 +16,10 @@ from utils.topic_analysis import topic_analysis
 
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
+from utils.reports_generator import community_report
+from utils.reports_generator import product_report
+from utils.reports_generator import qa_report
+
 
 st.set_page_config(
     page_title="Reddit Community Dashboard",
@@ -54,6 +58,21 @@ summary = generate_summary(
     sentiment
 )
 
+community = community_report(
+    activity,
+    sentiment,
+    topic_df
+)
+
+product = product_report(
+    feature_df,
+    topic_df
+)
+
+qa = qa_report(
+    bug_df,
+    sentiment
+)
 
 #community overtime
 st.subheader("📈 Community Overview")
@@ -300,7 +319,17 @@ fig_sentiment = px.pie(
 )
 
 
-
 st.divider()
 st.subheader("📋 AI Community Summary")
 st.markdown(summary)
+
+
+st.divider()
+st.subheader("📅 Community Daily Report")
+st.markdown(community)
+
+st.subheader("🚀 Product Report")
+st.markdown(product)
+
+st.subheader("🐞 QA Report")
+st.markdown(qa)

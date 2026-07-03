@@ -54,9 +54,8 @@ def feature_analysis(df):
     for _, row in df.iterrows():
 
         text = (
-            str(row["title"]) + " " +
-            str(row["body"])
-        ).lower()
+            str(row["text"]).lower()
+        )
 
         for feature, keywords in FEATURE_KEYWORDS.items():
 

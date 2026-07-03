@@ -62,9 +62,8 @@ def bug_analysis(df):
     for _, row in df.iterrows():
 
         text = (
-            str(row["title"]) + " " +
-            str(row["body"])
-        ).lower()
+            str(row["text"]).lower()
+        )
 
         for bug, keywords in BUG_KEYWORDS.items():
 

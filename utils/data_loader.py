@@ -2,39 +2,76 @@ import json
 import pandas as pd
 
 
-def load_data(path):
+def load_data(path, source="reddit"):
 
     with open(path, "r", encoding="utf-8") as f:
-
         raw = json.load(f)
 
     rows = []
 
-    for item in raw["data"]["children"]:
+    # Reddit
+    if source == "reddit":
 
-        post = item["data"]
+        for item in raw["data"]["children"]:
 
-        rows.append({
+            post = item["data"]
 
-            "title": post.get("title", ""),
+            rows.append({
 
-            "body": post.get("selftext", ""),
+                "title": post.get("title", ""),
 
-            "author": post.get("author", ""),
+                "body": post.get("selftext", ""),
 
-            "created_utc": post.get("created_utc", 0),
+                "text": post.get("title", "") + " " + post.get("selftext", ""),
 
-            "score": post.get("score", 0),
+                "author": post.get("author", ""),
 
-            "num_comments": post.get("num_comments", 0)
+                "group": "reddit",
 
-        })
+                "created_date": post.get("created_utc"),
 
-    df = pd.DataFrame(rows)
+                "score": post.get("score", 0),
 
-    df["created_date"] = (
-    pd.to_datetime(df["created_utc"], unit="s")
-    .dt.date
-    )
-    
+                "num_comments": post.get("num_comments", 0)
+
+            })
+
+        df = pd.DataFrame(rows)
+
+        df["created_date"] = pd.to_datetime(
+            df["created_date"],
+            unit="s"
+        )
+
+    # WeChat
+    elif source == "wechat":
+
+        for msg in raw:
+
+            rows.append({
+
+                "title": "",
+
+                "body": msg.get("chatContent", ""),
+
+                "text": msg.get("chatContent", ""),
+
+                "author": msg.get("senderName", ""),
+
+                "group": msg.get("groupName", ""),
+
+                "created_date": msg.get("receivedAt"),
+
+                "score": 0,
+
+                "num_comments": 0
+
+            })
+
+        df = pd.DataFrame(rows)
+
+        df["created_date"] = pd.to_datetime(
+            df["created_date"]
+        )
+
     return df

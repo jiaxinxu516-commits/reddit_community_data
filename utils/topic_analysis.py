@@ -29,16 +29,35 @@ CUSTOM_STOPWORDS = {
 
     # 其它
     "lens", "new", "one", "would", "could", "can",
-    "got", "getting"
+    "got", "getting",
+
+    "周小兵",
+    "黄军",
+    "陆涛",
+    "dr",
+    "ryan",
+    "leo",
+    "乐奇同学",
+    "产品设计研发",
+
+    "图片",
+    "视频",
+    "表情",
+    "一个",
+    "一下",
+    "今天",
+    "谢谢",
+    "可以",
+    "哈哈",
+    "老师",
+    "收到"
 }
 
 
 def topic_analysis(df, top_n=20):
 
     texts = (
-        df["title"].fillna("") +
-        " " +
-        df["body"].fillna("")
+        df["text"].fillna("")
     )
 
     # 合并 sklearn 默认停用词 + 自定义停用词

@@ -14,12 +14,14 @@ def activity_analysis(df):
 
     avg_comments = round(comments / posts, 2)
 
-    # 每天发帖数量
+    # ===== 按天统计 =====
     posts_per_day = (
-        df.groupby("created_date")
-        .size()
-        .reset_index(name="Posts")
-        .sort_values("created_date")
+        df.assign(day=df["created_date"].dt.date)
+          .groupby("day")
+          .size()
+          .reset_index(name="Posts")
+          .rename(columns={"day": "created_date"})
+          .sort_values("created_date")
     )
 
     return {

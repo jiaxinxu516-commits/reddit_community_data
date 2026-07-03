@@ -20,6 +20,9 @@ from utils.reports_generator import community_report
 from utils.reports_generator import product_report
 from utils.reports_generator import qa_report
 
+from utils.group_analysis import group_analysis
+
+from utils.user_analysis import user_analysis
 
 st.set_page_config(
     page_title="Reddit Community Dashboard",
@@ -28,79 +31,264 @@ st.set_page_config(
 
 
 #build dashboard
-st.title("📊 Reddit Community Intelligence Dashboard")
+source = st.sidebar.selectbox(
+    "Data Source",
+    ["reddit", "wechat"]
+)
+
+# ==========================
+# Heavy Analysis
+# ==========================
+st.sidebar.markdown("---")
+st.sidebar.subheader("⚙️ Heavy Analysis")
+
+run_sentiment = st.sidebar.checkbox(
+    "Sentiment Analysis",
+    value=(source == "reddit")
+)
+
+if source == "reddit":
+    df = load_data(
+        "data/reddit_rokid_glasses_data.json",
+        source="reddit"
+    )
+else:
+    df = load_data(
+        "data/all_wechat_data.json",
+        source="wechat"
+    )
+
+if source == "reddit":
+    st.title("📊 Reddit Community Dashboard")
+
+else:
+    st.title("📊 WeChat Community Dashboard")
+
 color_discrete_sequence=[
     "#00B5FF"
 ]
 
 left, right = st.columns(2)
 
-
-df = load_data("data/reddit_rokid_glasses_data.json")
 activity = activity_analysis(df)
 feature_df = feature_analysis(df)
 bug_df = bug_analysis(df)
 
-sentiment = sentiment_analysis(df)
-sentiment_df = sentiment["df"]
-sentiment_summary = sentiment["summary"]
-sentiment_timeline = sentiment["timeline"]
-negative_posts = sentiment["negative_posts"]
+if run_sentiment:
+
+    sentiment = sentiment_analysis(df)
+
+    sentiment_df = sentiment["df"]
+
+    sentiment_summary = sentiment["summary"]
+
+    sentiment_timeline = sentiment["timeline"]
+
+    negative_posts = sentiment["negative_posts"]
+
+else:
+
+    sentiment = None
+
+group_df = group_analysis(df)
 
 
 topic_df = topic_analysis(df)
 
-summary = generate_summary(
-    activity,
-    feature_df,
-    bug_df,
-    topic_df,
-    sentiment
-)
+if run_sentiment:
 
-community = community_report(
-    activity,
-    sentiment,
-    topic_df
-)
+    summary = generate_summary(
+        activity,
+        feature_df,
+        bug_df,
+        topic_df,
+        sentiment
+    )
 
-product = product_report(
-    feature_df,
-    topic_df
-)
+else:
 
-qa = qa_report(
-    bug_df,
-    sentiment
-)
+    summary = """
+### 📋 AI Summary
+
+Sentiment Analysis is disabled.
+
+Enable it from the sidebar.
+"""
+
+if run_sentiment:
+
+    community = community_report(
+        activity,
+        sentiment,
+        topic_df
+    )
+
+    product = product_report(
+        feature_df,
+        topic_df
+    )
+
+    qa = qa_report(
+        bug_df,
+        sentiment
+    )
+
+
+user_df = user_analysis(df)
 
 #community overtime
 st.subheader("📈 Community Overview")
 
 c1, c2, c3, c4 = st.columns(4)
 
-with c1:
-    st.metric(
-        "Posts",
-        activity["posts"]
+if source == "reddit":
+
+    c1.metric("Posts", activity["posts"])
+    c2.metric("Comments", activity["comments"])
+    c3.metric("Active Users", activity["users"])
+    c4.metric("Avg Comments/Post", activity["avg_comments"])
+
+else:
+
+    c1.metric("Messages", activity["posts"])
+    c2.metric("Groups", df["group"].nunique())
+    c3.metric("Active Users", activity["users"])
+    c4.metric("Avg Messages/User",
+              round(activity["posts"]/activity["users"],2))
+    
+
+# ==========================
+# WeChat Only
+# ==========================
+if source == "wechat":
+
+    st.divider()
+    st.header("💬 WeChat Community Analysis")
+
+    # ==========================
+    # KPI
+    # ==========================
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric("Groups", df["group"].nunique())
+    c2.metric("Messages", len(df))
+    c3.metric("Users", df["author"].nunique())
+
+    # ==========================
+    # Group Data
+    # ==========================
+    group_users = (
+        df.groupby("group")["author"]
+          .nunique()
+          .reset_index(name="Users")
     )
 
-with c2:
-    st.metric(
-        "Comments",
-        activity["comments"]
+    # ==========================
+    # 两列布局
+    # ==========================
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("💬 各群消息数")
+
+        fig_group = px.bar(
+            group_df,
+            x="Messages",
+            y="group",
+            orientation="h",
+            text="Messages",
+            template="plotly_dark",
+            title="Messages by Group"
+        )
+
+        fig_group.update_layout(
+            height=max(350, len(group_df) * 45),
+            yaxis=dict(categoryorder="total ascending")
+        )
+
+        fig_group.update_yaxes(
+            tickmode="linear",
+            automargin=True
+        )
+
+        st.plotly_chart(
+            fig_group,
+            use_container_width=True
+        )
+
+    # ==========================
+    # 右边
+    # ==========================
+    with col2:
+
+        st.subheader("👥 各群活跃人数")
+
+        fig_users = px.bar(
+            group_users,
+            x="Users",
+            y="group",
+            orientation="h",
+            text="Users",
+            template="plotly_dark",
+            title="Users by Group"
+        )
+
+        fig_users.update_layout(
+            height=max(350, len(group_users) * 45),
+            yaxis=dict(categoryorder="total ascending")
+        )
+
+        fig_users.update_yaxes(
+            tickmode="linear",
+            automargin=True
+        )
+
+        st.plotly_chart(
+            fig_users,
+            use_container_width=True
+        )
+
+    st.subheader("👤 Top Active Users")
+
+    user_df = (
+        df.groupby("author")
+        .size()
+        .reset_index(name="Messages")
+        .sort_values("Messages", ascending=False)
     )
 
-with c3:
-    st.metric(
-        "Active Users",
-        activity["users"]
+    user_df["display_name"] = (
+        user_df["author"]
+        .str.slice(0,10)
     )
 
-with c4:
-    st.metric(
-        "Avg Comments/Post",
-        activity["avg_comments"]
+    fig_user = px.bar(
+        user_df.head(20),
+        x="Messages",
+        y="display_name",
+        orientation="h",
+        text="Messages",
+        hover_name="author",
+        template="plotly_dark",
+        title="Top 20 Active Users"
+    )
+
+    fig_user.update_layout(
+        height=700,
+        yaxis=dict(
+            categoryorder="total ascending"
+        )
+    )
+
+    fig_user.update_yaxes(
+        tickmode="linear",
+        automargin=True
+    )
+
+    st.plotly_chart(
+        fig_user,
+        use_container_width=True
     )
 
 
@@ -108,13 +296,19 @@ with c4:
 st.divider()
 st.subheader("📈 Posts Over Time")
 
+title = (
+    "Daily Posts"
+    if source=="reddit"
+    else "Daily Messages"
+)
+
 fig = px.bar(
     activity["posts_per_day"],
     x="created_date",
     y="Posts",
-    template="plotly_dark",
-    title="Daily Posts"
+    title=title,
 )
+
 
 st.sidebar.header("Filters")
 
@@ -257,58 +451,51 @@ st.plotly_chart(
 
 
 #PNN
-st.divider()
-st.subheader("🧠 Community Sentiment")
+if run_sentiment:
 
-fig_sentiment = px.pie(
+    st.divider()
+    st.subheader("🧠 Community Sentiment")
 
-    sentiment_summary,
+    fig_sentiment = px.pie(
+        sentiment_summary,
+        names="Sentiment",
+        values="Count",
+        template="plotly_dark"
+    )
 
-    names="Sentiment",
+    st.plotly_chart(
+        fig_sentiment,
+        use_container_width=True
+    )
 
-    values="Count",
+    c1, c2, c3 = st.columns(3)
 
-    template="plotly_dark",
+    positive = sentiment_summary.loc[
+        sentiment_summary["Sentiment"]=="positive",
+        "Count"
+    ].sum()
 
-    title="Sentiment Distribution"
+    neutral = sentiment_summary.loc[
+        sentiment_summary["Sentiment"]=="neutral",
+        "Count"
+    ].sum()
 
-)
+    negative = sentiment_summary.loc[
+        sentiment_summary["Sentiment"]=="negative",
+        "Count"
+    ].sum()
 
-st.plotly_chart(
-    fig_sentiment,
-    use_container_width=True
-)
+    c1.metric("😊 Positive", positive)
+    c2.metric("😐 Neutral", neutral)
+    c3.metric("😞 Negative", negative)
 
-c1, c2, c3 = st.columns(3)
-
-positive = sentiment_summary.loc[
-    sentiment_summary["Sentiment"]=="positive",
-    "Count"
-].sum()
-
-neutral = sentiment_summary.loc[
-    sentiment_summary["Sentiment"]=="neutral",
-    "Count"
-].sum()
-
-negative = sentiment_summary.loc[
-    sentiment_summary["Sentiment"]=="negative",
-    "Count"
-].sum()
-
-c1.metric("😊 Positive", positive)
-
-c2.metric("😐 Neutral", neutral)
-
-c3.metric("😞 Negative", negative)
-
-color_map = {
+    color_map = {
     "positive": "#00cc96",
     "neutral": "#636efa",
     "negative": "#ff4b4b"
-}
+    }
 
-fig_sentiment = px.pie(
+    fig_sentiment = px.pie(
     sentiment_summary,
     names="Sentiment",
     values="Count",
@@ -316,17 +503,39 @@ fig_sentiment = px.pie(
     color_discrete_map=color_map,
     template="plotly_dark",
     title="Sentiment Distribution"
-)
+    )
 
 
-st.divider()
-st.subheader("📋 AI Community Summary")
-st.markdown(summary)
+else:
+
+    st.info("Sentiment Analysis is disabled.")
 
 
-st.divider()
-st.subheader("📅 Community Daily Report")
-st.markdown(community)
+if run_sentiment:
+
+    st.divider()
+
+    st.subheader("📋 AI Community Summary")
+
+    st.markdown(summary)
+
+
+if run_sentiment:
+
+    st.divider()
+
+    st.subheader("📅 Community Daily Report")
+
+    st.markdown(community)
+
+    st.subheader("🚀 Product Report")
+
+    st.markdown(product)
+
+    st.subheader("🐞 QA Report")
+
+    st.markdown(qa)
+
 
 st.subheader("🚀 Product Report")
 st.markdown(product)

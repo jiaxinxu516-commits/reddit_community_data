@@ -1,11 +1,17 @@
 from transformers import pipeline
 import pandas as pd
+import streamlit as st
 
-# 只加载一次模型
-classifier = pipeline(
-    "sentiment-analysis",
-    model="cardiffnlp/twitter-roberta-base-sentiment-latest"
-)
+
+
+@st.cache_resource
+def load_model():
+    return pipeline(
+        "sentiment-analysis",
+        model="cardiffnlp/twitter-roberta-base-sentiment-latest"
+    )
+
+classifier = load_model()
 
 
 def sentiment_analysis(df):
@@ -17,8 +23,7 @@ def sentiment_analysis(df):
     for _, row in df.iterrows():
 
         text = (
-            str(row["title"]) + " " +
-            str(row["body"])
+            str(row["text"])
         )
 
         try:

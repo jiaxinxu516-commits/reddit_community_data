@@ -3,7 +3,7 @@ import plotly.express as px
 import pandas as pd
 
 
-def wechat_dashboard(df, activity, group_df, user_df):
+def wechat_dashboard(df, activity, group_df, user_df, user_sentiment_df):
 
     st.divider()
     st.header("💬 WeChat Community Analysis")
@@ -49,6 +49,26 @@ def wechat_dashboard(df, activity, group_df, user_df):
         fig_user,
         use_container_width=True
     )
+
+    if user_sentiment_df is not None:
+
+        st.subheader("😊 User Sentiment Ranking")
+
+        st.dataframe(
+            user_sentiment_df[
+                [
+                    "author",
+                    "Positive %",
+                    "Neutral %",
+                    "Negative %",
+                    "Sentiment Score"
+                ]
+            ],
+            width="stretch"
+        )
+
+    else:
+        st.info("Enable 'Run Sentiment Analysis' to view user sentiment.")
 
     # ==================================================
     # Group Users

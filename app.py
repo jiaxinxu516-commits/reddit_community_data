@@ -17,6 +17,7 @@ from utils.reports_generator import (
 )
 from utils.group_analysis import group_analysis
 from utils.user_analysis import user_analysis
+from utils.user_sentiment_analysis import user_sentiment_analysis
 
 # ==========================
 # Dashboard
@@ -97,6 +98,23 @@ else:
     topic_df = topic_analysis(df)
 
 # ==========================
+# Sentiment Analysis
+# ==========================
+if source == "wechat":
+    sentiment = None
+    user_sentiment_df = None
+
+    if run_sentiment:
+
+        sentiment = sentiment_analysis(df)
+
+        sentiment_df = sentiment["df"]
+
+        user_sentiment_df = user_sentiment_analysis(
+            sentiment_df
+        )
+
+# ==========================
 # Overview
 # ==========================
 show_overview(
@@ -126,7 +144,8 @@ else:
         df,
         activity,
         group_df,
-        user_df
+        user_df,
+        user_sentiment_df
     )
 
 # ==========================
@@ -173,5 +192,11 @@ if run_sentiment:
     )
 
 else:
+    # sentiment = sentiment_analysis(df)
+
+    # sentiment_df = sentiment["df"]
+
+    # user_sentiment_df = user_sentiment_analysis(
+    # sentiment_df)
 
     st.info("Sentiment Analysis is disabled.")

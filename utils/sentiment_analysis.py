@@ -65,6 +65,22 @@ def sentiment_analysis(df):
         .reset_index(name="Count")
     )
 
+    timeline = df.copy()
+
+    timeline["week"] = (
+        pd.to_datetime(
+            timeline["created_date"]
+        ).dt.to_period("W").astype(str)
+    )
+
+    timeline = (
+        timeline
+        .groupby(
+            ["week", "sentiment"]
+        )
+        .size()
+        .reset_index(name="Count")
+    )
     # ==========================
     # ③ Negative Posts
     # ==========================

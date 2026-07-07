@@ -10,7 +10,6 @@ from utils.feature_analysis import feature_analysis
 from utils.bug_analysis import bug_analysis
 from utils.topic_analysis import topic_analysis
 from utils.sentiment_analysis import sentiment_analysis
-from utils.user_sentiment_analysis import user_sentiment_analysis
 from utils.group_analysis import group_analysis
 from utils.user_analysis import user_analysis
 
@@ -101,16 +100,15 @@ else:
     user_df = user_analysis(df)
 
 # ==========================
-# Sentiment (只跑一次)
+# Sentiment (Run Once)
 # ==========================
 sentiment = None
-user_sentiment_df = None
 
 if run_sentiment:
 
-    # 微信只分析最近30天
     if source == "wechat":
 
+        # 只分析最近30天
         recent_df = df[
             pd.to_datetime(df["created_date"])
             >= (
@@ -124,14 +122,6 @@ if run_sentiment:
     else:
 
         sentiment = sentiment_analysis(df)
-
-    sentiment_df = sentiment["df"]
-
-    if source == "wechat":
-
-        user_sentiment_df = user_sentiment_analysis(
-            sentiment_df
-        )
 
 # ==========================
 # Overview
@@ -164,7 +154,6 @@ else:
         activity,
         group_df,
         user_df,
-        user_sentiment_df
     )
 
 # ==========================

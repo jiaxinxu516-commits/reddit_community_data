@@ -1,18 +1,15 @@
 from transformers import pipeline
-import pandas as pd
 import streamlit as st
-
-
+import pandas as pd
 
 @st.cache_resource
-def load_model():
+def load_sentiment_model():
     return pipeline(
         "sentiment-analysis",
         model="cardiffnlp/twitter-roberta-base-sentiment-latest"
     )
 
-classifier = load_model()
-
+classifier = load_sentiment_model()
 
 def sentiment_analysis(df):
 

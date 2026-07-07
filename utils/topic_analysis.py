@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as st
 
 from sklearn.feature_extraction.text import (
     TfidfVectorizer,
@@ -33,7 +34,7 @@ CUSTOM_STOPWORDS = {
 
 }
 
-
+@st.cache_data
 def topic_analysis(df, top_n=20):
 
     texts = (

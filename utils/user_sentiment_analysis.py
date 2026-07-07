@@ -1,6 +1,7 @@
 import pandas as pd
+import streamlit as st
 
-
+@st.cache_data
 def user_sentiment_analysis(sentiment_df):
     """
     Calculate sentiment statistics for each user.

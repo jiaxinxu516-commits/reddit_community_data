@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import streamlit as st
 
 BUG_KEYWORDS = {
 
@@ -51,7 +52,7 @@ BUG_KEYWORDS = {
     ]
 }
 
-
+@st.cache_data
 def bug_analysis(df):
 
     bug_counts = {}

@@ -1,6 +1,7 @@
 import pandas as pd
+import streamlit as st
 
-
+@st.cache_data
 def user_analysis(df):
 
     user_df = (

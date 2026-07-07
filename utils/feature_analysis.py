@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import streamlit as st
 
 FEATURE_KEYWORDS = {
     "AI": [
@@ -42,7 +43,7 @@ FEATURE_KEYWORDS = {
     ]
 }
 
-
+@st.cache_data
 def feature_analysis(df):
 
     feature_counts = {}

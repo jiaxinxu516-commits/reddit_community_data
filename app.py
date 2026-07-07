@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 # ==========================
 # Utils
@@ -9,18 +10,19 @@ from utils.feature_analysis import feature_analysis
 from utils.bug_analysis import bug_analysis
 from utils.topic_analysis import topic_analysis
 from utils.sentiment_analysis import sentiment_analysis
+from utils.user_sentiment_analysis import user_sentiment_analysis
+from utils.group_analysis import group_analysis
+from utils.user_analysis import user_analysis
+
 from utils.summary import generate_summary
 from utils.reports_generator import (
     community_report,
     product_report,
     qa_report,
 )
-from utils.group_analysis import group_analysis
-from utils.user_analysis import user_analysis
-from utils.user_sentiment_analysis import user_sentiment_analysis
 
 # ==========================
-# Dashboard
+# Dashboards
 # ==========================
 from dashboard.overview import show_overview
 from dashboard.reddit import reddit_dashboard
@@ -28,9 +30,8 @@ from dashboard.wechat import wechat_dashboard
 from dashboard.sentiment import sentiment_dashboard
 from dashboard.reports import report_dashboard
 
-
 # ==========================
-# Page Config
+# Page
 # ==========================
 st.set_page_config(
     page_title="Community Dashboard",
@@ -44,8 +45,6 @@ source = st.sidebar.selectbox(
     "Data Source",
     ["reddit", "wechat"]
 )
-
-st.sidebar.divider()
 
 run_sentiment = st.sidebar.checkbox(
     "Run Sentiment Analysis",
@@ -72,43 +71,63 @@ else:
 # ==========================
 # Title
 # ==========================
-title = (
+st.title(
     "📊 Reddit Community Dashboard"
     if source == "reddit"
     else "💬 WeChat Community Dashboard"
 )
 
-st.title(title)
-
 # ==========================
-# Run Analysis
+# Basic Analysis
 # ==========================
 activity = activity_analysis(df)
+
+topic_df = topic_analysis(df)
+
+feature_df = None
+bug_df = None
+
+group_df = None
+user_df = None
 
 if source == "reddit":
 
     feature_df = feature_analysis(df)
     bug_df = bug_analysis(df)
-    topic_df = topic_analysis(df)
 
 else:
 
     group_df = group_analysis(df)
     user_df = user_analysis(df)
-    topic_df = topic_analysis(df)
 
 # ==========================
-# Sentiment Analysis
+# Sentiment (只跑一次)
 # ==========================
-if source == "wechat":
-    sentiment = None
-    user_sentiment_df = None
+sentiment = None
+user_sentiment_df = None
 
-    if run_sentiment:
+if run_sentiment:
+
+    # 微信只分析最近30天
+    if source == "wechat":
+
+        recent_df = df[
+            pd.to_datetime(df["created_date"])
+            >= (
+                pd.Timestamp.today().normalize()
+                - pd.Timedelta(days=30)
+            )
+        ]
+
+        sentiment = sentiment_analysis(recent_df)
+
+    else:
 
         sentiment = sentiment_analysis(df)
 
-        sentiment_df = sentiment["df"]
+    sentiment_df = sentiment["df"]
+
+    if source == "wechat":
 
         user_sentiment_df = user_sentiment_analysis(
             sentiment_df
@@ -149,16 +168,21 @@ else:
     )
 
 # ==========================
-# Sentiment
+# Sentiment Dashboard
 # ==========================
 if run_sentiment:
 
-    sentiment = sentiment_analysis(df)
+    sentiment_dashboard(sentiment)
+
+# ==========================
+# Reports（Reddit）
+# ==========================
+if run_sentiment and source == "reddit":
 
     summary = generate_summary(
         activity,
-        feature_df if source == "reddit" else None,
-        bug_df if source == "reddit" else None,
+        feature_df,
+        bug_df,
         topic_df,
         sentiment
     )
@@ -169,34 +193,56 @@ if run_sentiment:
         topic_df
     )
 
-    if source == "reddit":
+    product = product_report(
+        feature_df,
+        topic_df
+    )
 
-        product = product_report(
-            feature_df,
-            topic_df
-        )
-
-        qa = qa_report(
-            bug_df,
-            sentiment
-        )
-
-    sentiment_dashboard(sentiment)
+    qa = qa_report(
+        bug_df,
+        sentiment
+    )
 
     report_dashboard(
         summary,
         community,
-        product if source == "reddit" else None,
-        qa if source == "reddit" else None,
+        product,
+        qa,
         source
     )
 
+# ==========================
+# Reports（WeChat）
+# ==========================
+elif run_sentiment and source == "wechat":
+
+    summary = generate_summary(
+        activity,
+        None,
+        None,
+        topic_df,
+        sentiment
+    )
+
+    community = community_report(
+        activity,
+        sentiment,
+        topic_df
+    )
+
+    report_dashboard(
+        summary,
+        community,
+        None,
+        None,
+        source
+    )
+
+# ==========================
+# No Sentiment
+# ==========================
 else:
-    # sentiment = sentiment_analysis(df)
 
-    # sentiment_df = sentiment["df"]
-
-    # user_sentiment_df = user_sentiment_analysis(
-    # sentiment_df)
-
-    st.info("Sentiment Analysis is disabled.")
+    st.info(
+        "Enable **Run Sentiment Analysis** to view sentiment insights."
+    )

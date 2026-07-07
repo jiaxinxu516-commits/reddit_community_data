@@ -1,6 +1,7 @@
 import pandas as pd
+import streamlit as st
 
-
+@st.cache_data
 def activity_analysis(df):
     """
     Community Activity Analysis

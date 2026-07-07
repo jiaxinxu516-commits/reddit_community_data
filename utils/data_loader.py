@@ -2,7 +2,10 @@ import json
 import pandas as pd
 
 
-def load_data(path, source="reddit"):
+import streamlit as st
+
+@st.cache_data
+def load_data(path, source):
 
     with open(path, "r", encoding="utf-8") as f:
         raw = json.load(f)
